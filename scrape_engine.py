@@ -11,6 +11,8 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common.exceptions import NoSuchElementException
 from webdriver_manager.chrome import ChromeDriverManager
 
+import platform
+
 HEADERS = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36'
 }
@@ -19,17 +21,25 @@ BRAVE_PATH = r'C:\Program Files\BraveSoftware\Brave-Browser\Application\brave.ex
 
 def setup_driver(headless=False):
     options = webdriver.ChromeOptions()
-    options.binary_location = BRAVE_PATH
-    options.add_argument('--incognito')
+
+    if platform.system() == 'Windows':
+        # Local: use Brave
+        options.binary_location = BRAVE_PATH
+        options.add_argument('--incognito')
+        driver_service = Service(ChromeDriverManager(driver_version="148").install())
+    else:
+        # Linux / Streamlit Cloud: use system Chromium
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-dev-shm-usage')
+        options.add_argument('--disable-gpu')
+        driver_service = Service('/usr/bin/chromedriver')
+
     options.add_argument('--disable-blink-features=AutomationControlled')
     options.add_argument(f'user-agent={HEADERS["User-Agent"]}')
-    if headless:
+    if headless or platform.system() != 'Windows':
         options.add_argument('--headless')
-        options.add_argument('--disable-gpu')
-    return webdriver.Chrome(
-        service=Service(ChromeDriverManager(driver_version="148").install()),
-        options=options
-    )
+
+    return webdriver.Chrome(service=driver_service, options=options)
 
 
 def collect_images(html, page_url):

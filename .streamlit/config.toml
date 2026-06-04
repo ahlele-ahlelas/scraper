@@ -1,2 +1,2 @@
 [server]
-baseUrlPath = "scraper"
+headless = true

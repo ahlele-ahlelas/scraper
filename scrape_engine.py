@@ -32,7 +32,16 @@ def setup_driver(headless=False):
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-dev-shm-usage')
         options.add_argument('--disable-gpu')
-        driver_service = Service('/usr/bin/chromedriver')
+        options.add_argument('--remote-debugging-port=9222')
+
+        # find chromedriver wherever it is on this system
+        import shutil
+        chromedriver_path = (
+            shutil.which('chromedriver') or
+            shutil.which('chromium-driver') or
+            '/usr/bin/chromedriver'
+        )
+        driver_service = Service(chromedriver_path)
 
     options.add_argument('--disable-blink-features=AutomationControlled')
     options.add_argument(f'user-agent={HEADERS["User-Agent"]}')

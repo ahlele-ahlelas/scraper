@@ -58,6 +58,17 @@ with left:
         disabled=s['running'],
     )
 
+    st.markdown("**Minimum image size** (skip smaller images)")
+    col_w, col_h = st.columns(2)
+    min_width = col_w.number_input(
+        "Min width (px)", min_value=0, value=100, step=10,
+        disabled=s['running'],
+    )
+    min_height = col_h.number_input(
+        "Min height (px)", min_value=0, value=100, step=10,
+        disabled=s['running'],
+    )
+
     st.divider()
 
     if not s['running']:
@@ -80,6 +91,8 @@ with left:
                             headless=headless,
                             log=lambda m: s['logs'].append(m),
                             stop_event=s['stop_event'],
+                            min_width=int(min_width),
+                            min_height=int(min_height),
                         )
                         s['saved'] = saved or []
                     except Exception as e:

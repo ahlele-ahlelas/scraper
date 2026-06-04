@@ -147,26 +147,44 @@ def click_next_page(driver, page_num):
     return False
 
 
-def download_images(image_urls, output_dir, log=None):
+def download_images(image_urls, output_dir, log=None, min_width=0, min_height=0):
+    from PIL import Image
+    import io as _io
+
     saved = []
     for i, img_url in enumerate(image_urls):
         ext = os.path.splitext(urlparse(img_url).path)[-1] or '.jpg'
         filename = os.path.join(output_dir, f"image_{i}{ext}")
         try:
             res = requests.get(img_url, headers=HEADERS, timeout=10)
-            if res.status_code == 200:
-                with open(filename, 'wb') as f:
-                    f.write(res.content)
-                saved.append(filename)
+            if res.status_code != 200:
                 if log:
-                    log(f"Saved: image_{i}{ext}")
+                    log(f"Skipped ({res.status_code}): {img_url}")
+                continue
+
+            if min_width > 0 or min_height > 0:
+                try:
+                    img = Image.open(_io.BytesIO(res.content))
+                    w, h = img.size
+                    if w < min_width or h < min_height:
+                        if log:
+                            log(f"Skipped (too small {w}x{h}): image_{i}{ext}")
+                        continue
+                except Exception:
+                    pass  # can't read dimensions — let it through
+
+            with open(filename, 'wb') as f:
+                f.write(res.content)
+            saved.append(filename)
+            if log:
+                log(f"Saved: image_{i}{ext}")
         except Exception as e:
             if log:
                 log(f"Failed: {img_url} ({e})")
     return saved
 
 
-def run_scraper(url, max_pages, output_dir, headless=False, log=None, stop_event=None):
+def run_scraper(url, max_pages, output_dir, headless=False, log=None, stop_event=None, min_width=0, min_height=0):
     """
     Main entry point. Crawls `url` for `max_pages` pages,
     collects all image URLs, downloads them to `output_dir`.
@@ -227,7 +245,7 @@ def run_scraper(url, max_pages, output_dir, headless=False, log=None, stop_event
 
     if all_image_urls:
         emit(f"Downloading {len(all_image_urls)} images to '{output_dir}/'...")
-        saved = download_images(all_image_urls, output_dir, log=emit)
+        saved = download_images(all_image_urls, output_dir, log=emit, min_width=min_width, min_height=min_height)
         emit(f"Done. {len(saved)} images saved.")
         return saved
 

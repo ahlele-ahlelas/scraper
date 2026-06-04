@@ -147,7 +147,7 @@ def click_next_page(driver, page_num):
     return False
 
 
-def download_images(image_urls, output_dir, log=None, min_width=0, min_height=0):
+def download_images(image_urls, output_dir, log=None, min_width=0, min_height=0, max_images=0):
     from PIL import Image
     import io as _io
 
@@ -178,13 +178,17 @@ def download_images(image_urls, output_dir, log=None, min_width=0, min_height=0)
             saved.append(filename)
             if log:
                 log(f"Saved: image_{i}{ext}")
+            if max_images > 0 and len(saved) >= max_images:
+                if log:
+                    log(f"Reached image limit ({max_images}). Stopping download.")
+                break
         except Exception as e:
             if log:
                 log(f"Failed: {img_url} ({e})")
     return saved
 
 
-def run_scraper(url, max_pages, output_dir, headless=False, log=None, stop_event=None, min_width=0, min_height=0):
+def run_scraper(url, max_pages, output_dir, headless=False, log=None, stop_event=None, min_width=0, min_height=0, max_images=0):
     """
     Main entry point. Crawls `url` for `max_pages` pages,
     collects all image URLs, downloads them to `output_dir`.
@@ -245,7 +249,7 @@ def run_scraper(url, max_pages, output_dir, headless=False, log=None, stop_event
 
     if all_image_urls:
         emit(f"Downloading {len(all_image_urls)} images to '{output_dir}/'...")
-        saved = download_images(all_image_urls, output_dir, log=emit, min_width=min_width, min_height=min_height)
+        saved = download_images(all_image_urls, output_dir, log=emit, min_width=min_width, min_height=min_height, max_images=max_images)
         emit(f"Done. {len(saved)} images saved.")
         return saved
 

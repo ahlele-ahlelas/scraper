@@ -69,6 +69,12 @@ with left:
         disabled=s['running'],
     )
 
+    max_images = st.number_input(
+        "Max images to download (0 = unlimited)",
+        min_value=0, value=0, step=10,
+        disabled=s['running'],
+    )
+
     st.divider()
 
     if not s['running']:
@@ -93,6 +99,7 @@ with left:
                             stop_event=s['stop_event'],
                             min_width=int(min_width),
                             min_height=int(min_height),
+                            max_images=int(max_images),
                         )
                         s['saved'] = saved or []
                     except Exception as e:

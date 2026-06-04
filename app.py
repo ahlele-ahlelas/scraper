@@ -1,6 +1,8 @@
 import os
 import time
 import threading
+import zipfile
+import io
 import streamlit as st
 import state
 from scrape_engine import run_scraper
@@ -164,6 +166,22 @@ with right:
                         pass
 
             st.caption(f"Saved at: `{os.path.abspath(output_dir)}`")
+
+            # ZIP download
+            if s['saved']:
+                zip_buffer = io.BytesIO()
+                with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+                    for path in s['saved']:
+                        if os.path.exists(path):
+                            zf.write(path, os.path.basename(path))
+                zip_buffer.seek(0)
+                st.download_button(
+                    label=f"⬇️ Download all {saved_count} images as ZIP",
+                    data=zip_buffer,
+                    file_name="scraped_images.zip",
+                    mime="application/zip",
+                    use_container_width=True,
+                )
 
             if st.button("🔄 Scrape Again"):
                 s['done']  = False
